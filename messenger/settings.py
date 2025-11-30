@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,18 +21,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-zq1zq$+uj(+t)%ku7_8n$__98egik7ien92^#%x#6-1wt0llu0'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-zq1zq$+uj(+t)%ku7_8n$__98egik7ien92^#%x#6-1wt0llu0')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = [
-    '.vercel.app',
-    '.railway.app',
-    'projet-si-production.up.railway.app',
-    'localhost',
-    '127.0.0.1'
-]
+# Allow Railway and other domains
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '.railway.app,localhost,127.0.0.1').split(',')
+
+# Add Railway domain if RAILWAY_PUBLIC_DOMAIN is set
+if railway_domain := os.environ.get('RAILWAY_PUBLIC_DOMAIN'):
+    ALLOWED_HOSTS.append(railway_domain)
 
 
 # Application definition
