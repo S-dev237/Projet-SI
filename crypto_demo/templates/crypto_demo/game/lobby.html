@@ -1,0 +1,59 @@
+{% extends 'crypto_demo/base.html' %}
+
+{% block content %}
+<div class="text-center">
+    <h2>Salle d'attente</h2>
+    <p>Bienvenue, <strong>{{ player.name }}</strong> ({{ player.role }})</p>
+    
+    <div class="my-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <h3 class="text-blue-800">Équipe Alice</h3>
+            <ul class="list-disc list-inside text-left">
+                {% for p in players %}
+                    {% if p.role == 'Alice' %}
+                    <li>{{ p.name }}</li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+            <h3 class="text-green-800">Équipe Bob</h3>
+            <ul class="list-disc list-inside text-left">
+                {% for p in players %}
+                    {% if p.role == 'Bob' %}
+                    <li>{{ p.name }}</li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+            <h3 class="text-red-800">Équipe Oscar</h3>
+            <ul class="list-disc list-inside text-left">
+                {% for p in players %}
+                    {% if p.role == 'Oscar' %}
+                    <li>{{ p.name }}</li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    
+    <div class="mt-8">
+        <p class="mb-4 text-sm text-gray-500">Attendez que l'administrateur lance la partie...</p>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="start">
+            <button type="submit" class="btn bg-green-600 hover:bg-green-700">Démarrer la partie (Admin)</button>
+        </form>
+    </div>
+    
+    <script>
+        // Simple polling to refresh lobby
+        setTimeout(function(){
+           location.reload();
+        }, 3000);
+    </script>
+</div>
+{% endblock %}

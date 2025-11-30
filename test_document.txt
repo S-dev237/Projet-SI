@@ -1,0 +1,13 @@
+Document de Test - Cryptographie Professionnelle
+================================================
+
+Ce document est utilisé pour tester le système de chiffrement.
+
+Protocole implémenté:
+1. Signature RSA-PSS (SHA-256) du hash du document
+2. Génération d'une clé AES-256-GCM aléatoire
+3. Chiffrement du document avec AES-256-GCM
+4. Chiffrement de la clé AES avec RSA-OAEP (clé publique du destinataire)
+5. Envoi du paquet: ciphertext + encrypted_key + signature + certificat X.509
+
+Ce fichier sera chiffré puis déchiffré pour vérifier le bon fonctionnement.

@@ -1,0 +1,31 @@
+{% extends 'crypto_demo/base.html' %}
+
+{% block content %}
+<h2>Attaque par Collision (Simulation)</h2>
+<p>Une collision survient quand deux messages différents produisent le même hash. Avec SHA-256, c'est théoriquement impossible à trouver aujourd'hui.</p>
+
+<div class="section">
+    <h3>Comparaison de Hash</h3>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Tenter une collision (Simulation)</button>
+    </form>
+    
+    {% if msg1 %}
+    <div class="result">
+        <p><strong>Message 1 :</strong> "{{ msg1 }}"</p>
+        <p><strong>Hash 1 :</strong> {{ hash1 }}</p>
+        <hr>
+        <p><strong>Message 2 :</strong> "{{ msg2 }}"</p>
+        <p><strong>Hash 2 :</strong> {{ hash2 }}</p>
+        
+        <br>
+        {% if hash1 == hash2 %}
+        <span class="valid">⚠️ COLLISION TROUVÉE ! (Ceci est une simulation, en réalité c'est impossible)</span>
+        {% else %}
+        <span class="invalid">❌ Pas de collision. Les hashs sont totalement différents malgré la petite différence dans le message.</span>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

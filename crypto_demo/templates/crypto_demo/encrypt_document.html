@@ -1,0 +1,121 @@
+{% extends 'crypto_demo/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 border-bottom pb-3">
+        <i class="bi bi-shield-lock-fill"></i> Chiffrement et Envoi de Documents
+    </h2>
+    
+    {% if not current_user %}
+        <!-- Login/Select User -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-person-circle"></i> Authentification Utilisateur</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="login">
+                    <div class="mb-3">
+                        <label for="user_id" class="form-label fw-bold">Identité :</label>
+                        <select name="user_id" id="user_id" class="form-select" required>
+                            <option value="">-- Sélectionner un utilisateur --</option>
+                            {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.name }} ({{ user.email }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-box-arrow-in-right"></i> Connexion
+                    </button>
+                </form>
+            </div>
+        </div>
+    {% else %}
+        <!-- Send Document -->
+        <div class="alert alert-info border-0 shadow-sm mb-4">
+            <i class="bi bi-person-check-fill"></i> <strong>Session active :</strong> {{ current_user.name }}
+        </div>
+
+        {% if success %}
+            <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+                <i class="bi bi-check-circle-fill"></i> <strong>Succès !</strong> Document "<strong>{{ filename }}</strong>" ({{ file_size }} octets) chiffré et envoyé à <strong>{{ recipient_name }}</strong>.
+                <br><small class="text-muted">Protocole : Signature RSA-PSS → AES-256-GCM → Chiffrement clé RSA-OAEP</small>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endif %}
+
+        {% if error %}
+            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i> <strong>Erreur :</strong> {{ error }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endif %}
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-arrow-up"></i> Chiffrer et envoyer un fichier</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="send">
+                    
+                    <div class="mb-3">
+                        <label for="recipient_id" class="form-label fw-bold">
+                            <i class="bi bi-person"></i> Destinataire :
+                        </label>
+                        <select name="recipient_id" id="recipient_id" class="form-select" required>
+                            <option value="">-- Choisir un destinataire --</option>
+                            {% for user in recipients %}
+                                {% if user.id != current_user.id %}
+                                    <option value="{{ user.id }}">{{ user.name }} ({{ user.email }})</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="document_file" class="form-label fw-bold">
+                            <i class="bi bi-file-earmark"></i> Document à chiffrer :
+                        </label>
+                        <input type="file" 
+                               class="form-control" 
+                               id="document_file" 
+                               name="document_file" 
+                               accept="application/pdf,text/plain,.txt,.pdf,.djvu,application/vnd.djvu" 
+                               required>
+                        <div class="form-text">
+                            <i class="bi bi-info-circle"></i> Formats acceptés : PDF, TXT, DJVU, etc.
+                        </div>
+                    </div>
+
+                    <div class="alert alert-light border">
+                        <strong><i class="bi bi-shield-check"></i> Protocole de chiffrement :</strong>
+                        <ol class="mb-0 mt-2 small">
+                            <li>Signature du hash (SHA-256) du fichier avec votre clé privée (RSA-PSS)</li>
+                            <li>Génération d'une clé AES-256-GCM aléatoire</li>
+                            <li>Chiffrement du fichier avec AES-256-GCM</li>
+                            <li>Chiffrement de la clé AES avec la clé publique du destinataire (RSA-OAEP)</li>
+                            <li>Envoi du paquet : ciphertext + clé chiffrée + signature + certificat X.509</li>
+                        </ol>
+                    </div>
+
+                    <button type="submit" class="btn btn-success btn-lg w-100">
+                        <i class="bi bi-lock-fill"></i> Chiffrer et Envoyer
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <a href="{% url 'crypto_demo:decrypt_document' %}" class="btn btn-outline-primary">
+                <i class="bi bi-inbox"></i> Voir mes documents reçus
+            </a>
+            <a href="{% url 'crypto_demo:index' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-house"></i> Accueil
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

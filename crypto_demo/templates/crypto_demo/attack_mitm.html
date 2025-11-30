@@ -1,0 +1,109 @@
+{% extends 'crypto_demo/base.html' %}
+
+{% block content %}
+<h2>Attaque de l'Homme du Milieu (MITM)</h2>
+<p>Mallory s'interpose entre Alice et Bob pour intercepter et modifier les communications.</p>
+
+<!-- Step 1: Alice generates keys -->
+<div class="section">
+    <h3>Étape 1 : Alice prépare sa clé publique</h3>
+    {% if not step %}
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="step1">
+        <button type="submit" class="btn">Alice : Générer et envoyer ma clé publique</button>
+    </form>
+    {% endif %}
+    
+    {% if step >= 1 %}
+    <div class="result">
+        <strong>Clé Publique d'Alice (Authentique) :</strong><br>
+        <textarea readonly>{{ pub_a }}</textarea>
+        <p>Alice envoie cette clé à Bob...</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Step 2: Mallory intercepts -->
+{% if step >= 1 %}
+<div class="section">
+    <h3>Étape 2 : Mallory intercepte la clé</h3>
+    {% if step == 1 %}
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="step2">
+        <input type="hidden" name="priv_a" value="{{ priv_a }}">
+        <input type="hidden" name="pub_a" value="{{ pub_a }}">
+        <input type="hidden" name="message" value="{{ message }}">
+        <button type="submit" class="btn btn-danger">Mallory : Remplacer par ma propre clé publique</button>
+    </form>
+    {% endif %}
+    
+    {% if step >= 2 %}
+    <div class="result invalid">
+        <strong>Clé Publique de Mallory (Falsifiée) :</strong><br>
+        <textarea readonly>{{ pub_m }}</textarea>
+        <p>Mallory envoie SA clé publique à Bob, en prétendant être Alice.</p>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Step 3: Mallory modifies message and signs with HER key -->
+{% if step >= 2 %}
+<div class="section">
+    <h3>Étape 3 : Mallory envoie un faux message signé</h3>
+    <p>Alice voulait envoyer : "{{ message }}"</p>
+    {% if step == 2 %}
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="step3">
+        <input type="hidden" name="priv_a" value="{{ priv_a }}">
+        <input type="hidden" name="pub_a" value="{{ pub_a }}">
+        <input type="hidden" name="priv_m" value="{{ priv_m }}">
+        <input type="hidden" name="pub_m" value="{{ pub_m }}">
+        <button type="submit" class="btn btn-danger">Mallory : Modifier le message et signer avec MA clé privée</button>
+    </form>
+    {% endif %}
+    
+    {% if step >= 3 %}
+    <div class="result invalid">
+        <strong>Message modifié :</strong> "Message MODIFIÉ par Mallory"<br>
+        <strong>Signature (faite avec la clé privée de Mallory) :</strong><br>
+        <code>{{ signature }}</code>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Step 4: Bob verifies -->
+{% if step >= 3 %}
+<div class="section">
+    <h3>Étape 4 : Bob vérifie la signature</h3>
+    <p>Bob a reçu la clé publique de Mallory (croyant que c'est celle d'Alice).</p>
+    {% if step == 3 %}
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="step4">
+        <input type="hidden" name="message" value="{{ message }}">
+        <input type="hidden" name="signature" value="{{ signature }}">
+        <input type="hidden" name="pub_m" value="{{ pub_m }}">
+        <button type="submit" class="btn">Bob : Vérifier la signature</button>
+    </form>
+    {% endif %}
+    
+    {% if step == 4 %}
+    <div class="result">
+        {% if is_valid %}
+        <span class="valid">✅ Signature VALIDE !</span>
+        <p>Bob croit que le message vient d'Alice car la signature correspond à la clé publique qu'il a reçue (celle de Mallory).</p>
+        <p class="invalid"><strong>Conclusion :</strong> L'attaque MITM a réussi car Bob n'a pas pu authentifier la clé publique d'Alice (manque de Certificat/PKI).</p>
+        {% else %}
+        <span class="invalid">❌ Signature INVALIDE.</span>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

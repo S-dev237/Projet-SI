@@ -1,0 +1,70 @@
+{% extends 'crypto_demo/base.html' %}
+
+{% block content %}
+<h2>Attaque par Modification (Intégrité)</h2>
+<p>Démonstration : Si un attaquant modifie le message signé, la vérification échoue car le hash ne correspond plus à la signature.</p>
+
+<div class="section">
+    <h3>1. Alice signe un message</h3>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="generate_keys">
+        <button type="submit" class="btn">Générer Clés (Alice)</button>
+    </form>
+    
+    <br>
+    
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="sign">
+        <label>Message original (Alice) :</label>
+        <textarea name="message">Je vous verse 1000 FRS</textarea>
+        <textarea name="private_key" style="display:none;">{{ private_key }}</textarea>
+        <textarea name="public_key" style="display:none;">{{ public_key }}</textarea>
+        
+        {% if private_key %}
+        <button type="submit" class="btn">Signer</button>
+        {% else %}
+        <p><em>Générez les clés d'abord.</em></p>
+        {% endif %}
+    </form>
+    
+    {% if signature %}
+    <div class="result">
+        <strong>Signature générée :</strong><br>
+        <code>{{ signature }}</code>
+    </div>
+    {% endif %}
+</div>
+
+<div class="section">
+    <h3>2. Mallory modifie le message (Attaque)</h3>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="verify">
+        
+        <label>Message intercepté et modifié :</label>
+        <textarea name="message_to_verify">Je vous verse 10000 FRS</textarea>
+        
+        <input type="hidden" name="signature" value="{{ signature }}">
+        <input type="hidden" name="public_key" value="{{ public_key }}">
+        <input type="hidden" name="private_key" value="{{ private_key }}">
+        
+        {% if signature %}
+        <button type="submit" class="btn btn-danger">Tenter de vérifier le message modifié</button>
+        {% else %}
+        <p><em>Signez un message d'abord.</em></p>
+        {% endif %}
+    </form>
+    
+    {% if verification_done %}
+    <div class="result">
+        {% if is_valid %}
+        <span class="valid">✅ Signature VALIDE (C'est grave si le message est modifié !)</span>
+        {% else %}
+        <span class="invalid">❌ Signature INVALIDE. L'attaque a échoué. Le système a détecté la modification.</span>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,248 @@
+{% extends 'crypto_demo/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 border-bottom pb-3">
+        <i class="bi bi-lock-fill"></i> Déchiffrement des Documents Reçus
+    </h2>
+    
+    {% if not current_user %}
+        <!-- Login/Select User -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-person-circle"></i> Authentification Utilisateur</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="login">
+                    <div class="mb-3">
+                        <label for="user_id" class="form-label fw-bold">Identité :</label>
+                        <select name="user_id" id="user_id" class="form-select" required>
+                            <option value="">-- Sélectionner un utilisateur --</option>
+                            {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.name }} ({{ user.email }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-box-arrow-in-right"></i> Connexion
+                    </button>
+                </form>
+            </div>
+        </div>
+    {% else %}
+        <!-- User logged in -->
+        <div class="alert alert-info border-0 shadow-sm mb-4">
+            <i class="bi bi-person-check-fill"></i> <strong>Session active :</strong> {{ current_user.name }}
+        </div>
+
+        {% if error %}
+            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i> <strong>Erreur :</strong> {{ error }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endif %}
+
+        {% if decryption_result %}
+            <!-- Résultat du déchiffrement avec processus détaillé -->
+            <div class="card border-success shadow mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-check-circle-fill"></i> Déchiffrement Réussi : {{ decryption_result.document.original_filename }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-light border">
+                        <strong><i class="bi bi-file-earmark-text"></i> Document :</strong> {{ decryption_result.document.original_filename }} 
+                        ({{ decryption_result.document.file_size }} octets, {{ decryption_result.document.mime_type }})
+                        <br><strong><i class="bi bi-person"></i> Expéditeur :</strong> {{ decryption_result.sender_name }}
+                        <br><strong><i class="bi bi-calendar3"></i> Date d'envoi :</strong> {{ decryption_result.timestamp }}
+                    </div>
+
+                    <h6 class="mt-4 mb-3 fw-bold">
+                        <i class="bi bi-gear-fill"></i> Processus de Déchiffrement (étape par étape)
+                    </h6>
+                    <div class="list-group mb-3">
+                        <!-- Étape 1 : Vérification du certificat -->
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <h6 class="mb-2">
+                                    {% if decryption_result.cert_is_valid %}
+                                        <span class="badge bg-success">Validé</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Attention</span>
+                                    {% endif %}
+                                    <strong>Étape 1 :</strong> Vérification du Certificat X.509
+                                </h6>
+                            </div>
+                            <p class="mb-1 text-muted small">
+                                <strong>Sujet :</strong> {{ decryption_result.cert_subject }}<br>
+                                <strong>Validité :</strong> {{ decryption_result.cert_valid_from }} → {{ decryption_result.cert_valid_to }}<br>
+                                <strong>Statut :</strong> 
+                                {% if decryption_result.cert_is_valid %}
+                                    <span class="badge bg-success">Certificat Valide</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Certificat Expiré</span>
+                                {% endif %}
+                            </p>
+                        </div>
+
+                        <!-- Étape 2 : Déchiffrement de la clé AES -->
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <h6 class="mb-2">
+                                    <span class="badge bg-success">Validé</span>
+                                    <strong>Étape 2 :</strong> Dchiffrement de la Clé AES avec RSA-OAEP
+                                </h6>
+                            </div>
+                            <p class="mb-1 text-muted small">
+                                <strong>Algorithme :</strong> RSA-OAEP (MGF1 + SHA-256)<br>
+                                <strong>Clé privée :</strong> RSA-4096 bits<br>
+                                <strong>Résultat :</strong> Clé AES-{{ decryption_result.aes_key_length }} bits récupérée avec succès
+                            </p>
+                        </div>
+
+                        <!-- Étape 3 : Déchiffrement du document -->
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <h6 class="mb-2">
+                                    <span class="badge bg-success">Validé</span>
+                                    <strong>Étape 3 :</strong> Déchiffrement du Document avec AES-256-GCM
+                                </h6>
+                            </div>
+                            <p class="mb-1 text-muted small">
+                                <strong>Algorithme :</strong> AES-256-GCM (Authenticated Encryption)<br>
+                                <strong>Taille chiffrée :</strong> {{ decryption_result.ciphertext_size }} octets<br>
+                                <strong>Taille déchiffrée :</strong> {{ decryption_result.decrypted_size }} octets
+                            </p>
+                        </div>
+
+                        <!-- Étape 4 : Vérification de la signature -->
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <h6 class="mb-2">
+                                    {% if decryption_result.signature_valid %}
+                                        <span class="badge bg-success">Validé</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Échec</span>
+                                    {% endif %}
+                                    <strong>Étape 4 :</strong> Vérification de la Signature RSA-PSS
+                                </h6>
+                            </div>
+                            <p class="mb-1 text-muted small">
+                                <strong>Algorithme :</strong> RSA-PSS (MGF1 + SHA-256)<br>
+                                <strong>Clé publique :</strong> Certificat de {{ decryption_result.sender_name }}<br>
+                                <strong>Statut :</strong> 
+                                {% if decryption_result.signature_valid %}
+                                    <span class="badge bg-success">Signature Valide - Document Authentique</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Signature Invalide - Document Compromis</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Bouton de téléchargement du fichier déchiffré -->
+                    <form method="post" class="d-inline w-100">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="download_decrypted">
+                        <input type="hidden" name="document_id" value="{{ decryption_result.document.id }}">
+                        <button type="submit" class="btn btn-success btn-lg w-100">
+                            <i class="bi bi-download"></i> Télécharger le Fichier Déchiffré
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Liste des documents reçus -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-inbox-fill"></i> Documents Chiffrés Reçus</h5>
+            </div>
+            <div class="card-body">
+                {% if received_documents %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fichier</th>
+                                    <th>Expéditeur</th>
+                                    <th>Date</th>
+                                    <th>Taille</th>
+                                    <th>Statut</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in received_documents %}
+                                    <tr {% if not doc.is_read %}class="table-warning"{% endif %}>
+                                        <td>
+                                            <strong><i class="bi bi-file-earmark-lock"></i> {{ doc.original_filename }}</strong>
+                                            <br><small class="text-muted">{{ doc.mime_type }}</small>
+                                        </td>
+                                        <td>{{ doc.sender.name }}</td>
+                                        <td>{{ doc.created_at|date:"d/m/Y H:i" }}</td>
+                                        <td>{{ doc.file_size }} octets</td>
+                                        <td>
+                                            {% if doc.is_read %}
+                                                <span class="badge bg-secondary"><i class="bi bi-eye"></i> Lu</span>
+                                            {% else %}
+                                                <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-circle"></i> Nouveau</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="btn-group" role="group">
+                                                <!-- Bouton Déchiffrer -->
+                                                <form method="post" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="decrypt">
+                                                    <input type="hidden" name="document_id" value="{{ doc.id }}">
+                                                    <button type="submit" class="btn btn-sm btn-primary" title="Voir le processus de déchiffrement">
+                                                        <i class="bi bi-unlock"></i> Déchiffrer
+                                                    </button>
+                                                </form>
+                                                
+                                                <!-- Bouton Télécharger (chiffré) -->
+                                                <form method="post" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="download_encrypted">
+                                                    <input type="hidden" name="document_id" value="{{ doc.id }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Télécharger le fichier chiffré (inutilisable)">
+                                                        <i class="bi bi-file-earmark-lock"></i> Télécharger (Chiffré)
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info border-0">
+                        <i class="bi bi-info-circle"></i> Aucun document reçu pour le moment.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <a href="{% url 'crypto_demo:encrypt_document' %}" class="btn btn-outline-success">
+                <i class="bi bi-upload"></i> Envoyer un document
+            </a>
+            <a href="{% url 'crypto_demo:index' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-house"></i> Accueil
+            </a>
+            <form method="post" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="logout">
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="bi bi-box-arrow-right"></i> Déconnexion
+                </button>
+            </form>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends 'crypto_demo/base.html' %}
+
+{% block content %}
+<h2>Démonstration de Hashage (SHA-256)</h2>
+<p>Le hashage transforme un message de n'importe quelle taille en une empreinte de taille fixe. Une modification mineure du message change complètement le hash.</p>
+
+<form method="post">
+    {% csrf_token %}
+    <label for="message">Message :</label>
+    <textarea name="message" id="message" placeholder="Entrez votre message ici...">{{ message }}</textarea>
+    <button type="submit" class="btn">Générer le Hash</button>
+</form>
+
+{% if hash %}
+<div class="result">
+    <strong>Hash SHA-256 :</strong><br>
+    <code>{{ hash }}</code>
+</div>
+{% endif %}
+{% endblock %}

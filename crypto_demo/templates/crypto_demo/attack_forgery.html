@@ -1,0 +1,24 @@
+{% extends 'crypto_demo/base.html' %}
+
+{% block content %}
+<h2>Attaque par Falsification (Forgery)</h2>
+<p>Un attaquant essaie de générer une signature valide pour un message sans posséder la clé privée.</p>
+
+<div class="section">
+    <h3>Tentative de falsification</h3>
+    <p>L'attaquant veut signer : "Je donne tout mon argent à l'attaquant".</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="forge">
+        <button type="submit" class="btn btn-danger">Générer une signature sans clé privée (Attaque)</button>
+    </form>
+    
+    {% if error %}
+    <div class="result invalid">
+        {{ error }}
+    </div>
+    <p><strong>Explication :</strong> La signature RSA repose sur des propriétés mathématiques complexes. Sans la clé privée, il est computationnellement impossible de trouver une signature qui sera validée par la clé publique.</p>
+    {% endif %}
+</div>
+{% endblock %}

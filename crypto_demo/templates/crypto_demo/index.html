@@ -1,0 +1,146 @@
+{% extends 'crypto_demo/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold mb-3">
+            <i class="bi bi-shield-lock-fill text-primary"></i> Projet de SI sur les fonction de Hachage et Signatures
+        </h1>
+        <p class="lead text-muted">Démonstration  de chiffrement et signature numériques</p>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <!-- Chiffrement de Documents -->
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm border-primary">
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <i class="bi bi-shield-lock-fill text-primary" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="card-title text-primary text-center">Chiffrement de Documents</h3>
+                    <p class="card-text text-muted">
+                        Chiffrez et signez des documents en utilisant des algorithmes de niveau professionnel :
+                    </p>
+                    <ul class="list-group list-group-flush mb-3">
+                        <li class="list-group-item">
+                            <i class="bi bi-check-circle-fill text-success"></i> AES-256-GCM (chiffrement symtrique)
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-check-circle-fill text-success"></i> RSA-OAEP (chiffrement asymétrique)
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-check-circle-fill text-success"></i> RSA-PSS + SHA-256 (signature)
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-check-circle-fill text-success"></i> Certificats X.509
+                        </li>
+                    </ul>
+                    <a href="{% url 'crypto_demo:encrypt_document' %}" class="btn btn-primary w-100">
+                        <i class="bi bi-file-earmark-lock"></i> Accéder au Chiffrement
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Jeu Interactif (En développement) -->
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm border-secondary">
+                <div class="card-body position-relative">
+                    <div class="position-absolute top-0 end-0 m-3">
+                        <span class="badge bg-warning text-dark">En développement</span>
+                    </div>
+                    <div class="text-center mb-3">
+                        <i class="bi bi-controller text-secondary" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="card-title text-secondary text-center">Jeu Interactif</h3>
+                    <p class="card-text text-muted">
+                        Module de formation ludique à la cryptographie (bientôt disponible) :
+                    </p>
+                    <ul class="list-group list-group-flush mb-3">
+                        <li class="list-group-item text-muted">
+                            <i class="bi bi-clock-fill"></i> Équipes Alice, Bob et Oscar
+                        </li>
+                        <li class="list-group-item text-muted">
+                            <i class="bi bi-clock-fill"></i> Scénarios d'attaque et défense
+                        </li>
+                        <li class="list-group-item text-muted">
+                            <i class="bi bi-clock-fill"></i> Systèmes de scoring
+                        </li>
+                        <li class="list-group-item text-muted">
+                            <i class="bi bi-clock-fill"></i> Mode multijoueur
+                        </li>
+                    </ul>
+                    <a href="{% url 'crypto_demo:under_development' %}" class="btn btn-secondary w-100 disabled">
+                        <i class="bi bi-tools"></i> Module en construction
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Concepts Clés -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h4 class="mb-0">
+                <i class="bi bi-lightbulb-fill text-warning"></i> Concepts Clés de la Cryptographie
+            </h4>
+        </div>
+        <div class="card-body">
+            <div class="row g-4 text-center">
+                <div class="col-md-4">
+                    <div class="p-4 bg-light rounded">
+                        <i class="bi bi-key-fill text-primary" style="font-size: 2.5rem;"></i>
+                        <h5 class="mt-3 fw-bold">Chiffrement</h5>
+                        <p class="text-muted small">Confidentialité des données sensibles</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-4 bg-light rounded">
+                        <i class="bi bi-pen-fill text-success" style="font-size: 2.5rem;"></i>
+                        <h5 class="mt-3 fw-bold">Signature Numérique</h5>
+                        <p class="text-muted small">Authenticité et intégrité des documents</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-4 bg-light rounded">
+                        <i class="bi bi-award-fill text-info" style="font-size: 2.5rem;"></i>
+                        <h5 class="mt-3 fw-bold">Certificats</h5>
+                        <p class="text-muted small">Confiance et identité vérifiable</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informations Techniques -->
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-info-circle-fill"></i> Informations Techniques
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="fw-bold"><i class="bi bi-gear"></i> Technologies Utilisées</h6>
+                    <ul class="small">
+                        <li>Python Cryptography Library</li>
+                        <li>Django Framework</li>
+                        <li>RSA-4096 bits</li>
+                        <li>AES-256-GCM</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-bold"><i class="bi bi-shield-check"></i> Standards de Sécurité</h6>
+                    <ul class="small">
+                        <li>OAEP (Optimal Asymmetric Encryption Padding)</li>
+                        <li>PSS (Probabilistic Signature Scheme)</li>
+                        <li>GCM (Galois/Counter Mode)</li>
+                        <li>X.509 v3 Certificates</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'crypto_demo/base.html' %}
+
+{% block content %}
+<h2>Attaque par Rejeu (Replay Attack)</h2>
+<p>L'attaquant intercepte un message valide et sa signature, puis le renvoie plus tard pour répéter l'action (ex: virement).</p>
+
+<div class="section">
+    <h3>1. Alice envoie un ordre valide</h3>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="send">
+        <input type="hidden" name="message" value="Virement de 100€ à Bob">
+        <button type="submit" class="btn">Envoyer "Virement de 100€ à Bob"</button>
+    </form>
+</div>
+
+<div class="section">
+    <h3>2. Mallory rejoue le message</h3>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="replay">
+        <input type="hidden" name="message" value="Virement de 100€ à Bob">
+        <button type="submit" class="btn btn-danger">Rejouer le message intercepté</button>
+    </form>
+    
+    {% if status %}
+    <div class="result">
+        <p><strong>Message :</strong> {{ sent_message }}</p>
+        <p><strong>Résultat :</strong> {{ status }}</p>
+        {% if 'Replay' in status %}
+        <p class="invalid">⚠️ Le système a accepté le doublon car il n'y a pas de protection (timestamp/nonce).</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
