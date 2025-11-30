@@ -1,0 +1,43 @@
+{% extends 'crypto_demo/base.html' %}
+
+{% block content %}
+<h2>Attaque par Vol de Clé Privée</h2>
+<p>Si l'attaquant vole la clé privée, il peut signer n'importe quoi au nom de la victime.</p>
+
+<div class="section">
+    <h3>1. Génération des clés (Sécurisé)</h3>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="generate">
+        <button type="submit" class="btn">Générer Clés</button>
+    </form>
+    
+    {% if private_key and not stolen %}
+    <div class="result">
+        <strong>Clé Publique (Visible) :</strong><br>
+        <textarea readonly>{{ public_key }}</textarea>
+        <strong>Clé Privée (Cachée en théorie) :</strong><br>
+        <textarea readonly>********************************</textarea>
+        
+        <form method="post" style="margin-top: 1rem;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="steal">
+            <input type="hidden" name="private_key" value="{{ private_key }}">
+            <input type="hidden" name="public_key" value="{{ public_key }}">
+            <button type="submit" class="btn btn-danger">Simuler le vol de la clé privée</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+{% if stolen %}
+<div class="section">
+    <h3>2. Clé Volée !</h3>
+    <div class="result invalid">
+        <strong>⚠️ L'attaquant possède maintenant la clé privée :</strong><br>
+        <textarea readonly>{{ private_key }}</textarea>
+        <p>Il peut maintenant usurper l'identité de la victime et signer n'importe quel message.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

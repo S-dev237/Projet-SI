@@ -1,0 +1,214 @@
+{% extends 'crypto_demo/base.html' %}
+
+{% block content %}
+<div class="flex flex-col h-full">
+    <!-- Header Info -->
+    <div class="flex justify-between items-center mb-4 bg-gray-100 p-3 rounded-lg">
+        <div>
+            <span class="font-bold">Tour :</span> {{ game.round }}/{{ game.max_rounds }}
+            <span class="mx-2">|</span>
+            <span class="font-bold">Phase :</span> {{ game.get_current_phase_display }}
+        </div>
+        <div>
+            {% if game.current_phase == 'finished' %}
+                <span class="font-bold text-blue-600">Alice: {{ game.alice_score }}</span>
+                <span class="mx-2">|</span>
+                <span class="font-bold text-green-600">Bob: {{ game.bob_score }}</span>
+                <span class="mx-2">|</span>
+                <span class="font-bold text-red-600">Oscar: {{ game.oscar_score }}</span>
+            {% else %}
+                <span class="text-gray-500 text-sm">Scores disponibles en fin de partie</span>
+            {% endif %}
+        </div>
+        <div>
+            <strong>{{ player.name }}</strong> 
+            {% if player.is_traitor %}
+            <span class="text-red-600 font-bold">(TRAÎTRE)</span>
+            {% else %}
+            <span class="text-gray-600">({{ player.role }})</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="flex-grow bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 overflow-y-auto h-96">
+        {% for msg in messages %}
+            <div class="mb-4 {% if msg.sender_role == player.role %}text-right{% endif %}">
+                <div class="inline-block max-w-xs p-3 rounded-lg {% if msg.sender_role == 'Alice' %}bg-blue-100 text-blue-900{% else %}bg-green-100 text-green-900{% endif %}">
+                    <p class="font-bold text-xs mb-1">{{ msg.sender_role }} (Round {{ msg.round }})</p>
+                    
+                    {% if player.role == 'Oscar' and msg.is_compromised %}
+                        <p class="text-red-600 font-bold">[INTERCEPTÉ] {{ msg.traitor_content }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Original: {{ msg.content }}</p>
+                    {% elif player.is_traitor and msg.sender_role == player.role %}
+                         <!-- Traitor sees modified content during drafting/veto, but history shows what was sent? -->
+                         <!-- Simplified: History shows what was actually sent -->
+                         <p>{{ msg.content }}</p>
+                    {% else %}
+                        <p>{{ msg.content }}</p>
+                    {% endif %}
+                    
+                    <div class="mt-2 pt-2 border-t border-gray-200/50 text-xs text-gray-500">
+                        <p>🔒 Sig: {{ msg.signature|default:"RSA-SHA256"|truncatechars:10 }}...</p>
+                        {% if msg.attack_type %}
+                        <p class="text-red-500 font-bold">⚠️ Attaque: {{ msg.attack_type }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <p class="text-center text-gray-400 italic">Aucun message pour le moment.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Action Area -->
+    <div class="bg-white border-t border-gray-200 pt-4">
+        
+        <!-- DRAFTING PHASE -->
+        {% if game.current_phase == 'drafting' %}
+            {% if game.current_turn == player.role and not player.is_eliminated %}
+                <h3 class="text-lg font-bold mb-2">Choisissez un message prédéfini :</h3>
+                <form method="post" class="space-y-2">
+                    {% csrf_token %}
+                    <div class="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
+                        {% for msg in predefined_messages %}
+                        <label class="flex items-center p-3 border border-gray-300 rounded hover:bg-blue-50 cursor-pointer">
+                            <input type="radio" name="message_index" value="{{ forloop.counter0 }}" required class="mr-3">
+                            <span class="text-sm">{{ msg }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    <button type="submit" class="btn w-full mt-4">Envoyer ce message</button>
+                </form>
+            {% else %}
+                <p class="text-center text-gray-500">En attente de l'équipe {{ game.current_turn }}...</p>
+            {% endif %}
+        {% endif %}
+            
+        <!-- VETO PHASE -->
+        {% if game.current_phase == 'veto' %}
+            <div class="bg-yellow-50 p-4 rounded border border-yellow-200">
+                <h3 class="font-bold text-yellow-800 mb-2">Phase de Veto / Signature</h3>
+                
+                {% if player.role == game.current_turn and not player.is_eliminated %}
+                    <p class="mb-4">Message proposé : 
+                        <strong class="text-lg">
+                            {% if player.is_traitor %}
+                                {{ current_message.traitor_content }} <span class="text-red-500 text-xs">(Version Traître)</span>
+                            {% else %}
+                                {{ current_message.content }}
+                            {% endif %}
+                        </strong>
+                    </p>
+                    
+                    {% if not has_vetoed %}
+                    <form method="post" class="flex justify-center gap-4">
+                        {% csrf_token %}
+                        <button type="submit" name="decision" value="approve" class="btn bg-green-600 hover:bg-green-700">
+                            ✅ Approuver & Signer
+                        </button>
+                        <!-- Veto logic could be added here (reject message) -->
+                    </form>
+                    {% else %}
+                        <p class="text-center text-green-600 font-bold">Vous avez signé ce message.</p>
+                    {% endif %}
+                    
+                {% else %}
+                    <p class="text-center text-gray-500">L'équipe {{ game.current_turn }} valide le message...</p>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <!-- TRANSMISSION / OSCAR PHASE -->
+        {% if game.current_phase == 'transmission' %}
+            {% if player.role == 'Oscar' %}
+                <div class="bg-red-50 p-4 rounded border border-red-200">
+                    <h3 class="font-bold text-red-800 mb-2">Phase d'Attaque (Oscar)</h3>
+                    {% if current_message.is_compromised %}
+                        <p class="text-green-600 font-bold mb-2">🔓 Message Compromis ! Le traître a validé la version modifiée.</p>
+                        <p class="mb-4">Contenu intercepté : <strong>{{ current_message.traitor_content }}</strong></p>
+                    {% else %}
+                        <p class="text-gray-600 mb-2">🔒 Message sécurisé. Le traître n'a pas pu agir ou n'est pas dans cette équipe.</p>
+                    {% endif %}
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <label class="block mb-2">Attacher une attaque :</label>
+                        <select name="attack_type" class="w-full mb-2 p-2 border rounded">
+                            <option value="">Aucune attaque</option>
+                            <option value="MITM">Man-In-The-Middle (Simulé)</option>
+                            <option value="Replay">Replay Attack</option>
+                            <option value="Delay">Retard de paquet</option>
+                        </select>
+                        <button type="submit" class="btn btn-danger w-full">Envoyer au destinataire</button>
+                    </form>
+                </div>
+            {% else %}
+                <p class="text-center text-gray-500">Transmission en cours... (Oscar observe)</p>
+            {% endif %}
+        {% endif %}
+
+        <!-- ELIMINATION PHASE -->
+        {% if game.current_phase == 'elimination' %}
+            <div class="bg-gray-800 text-white p-4 rounded">
+                <h3 class="font-bold text-center mb-4">Phase d'Élimination</h3>
+                <p class="text-center text-sm mb-4">Concertez-vous hors ligne. Qui est le traître ?</p>
+                
+                {% if player.role != 'Oscar' and not player.is_eliminated %}
+                <form method="post" class="max-w-xs mx-auto">
+                    {% csrf_token %}
+                    <label class="block mb-2">Votre vote :</label>
+                    <select name="target_id" class="w-full p-2 text-black rounded mb-4">
+                        {% for p in game.players.all %}
+                            {% if p.role != 'Oscar' and not p.is_eliminated and p.id != player.id %}
+                                <option value="{{ p.id }}">{{ p.name }} ({{ p.role }})</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn bg-red-600 hover:bg-red-700 w-full">Voter pour éliminer</button>
+                </form>
+                {% else %}
+                    <p class="text-center text-gray-400">Vous ne pouvez pas voter.</p>
+                {% endif %}
+            </div>
+        {% endif %}
+        
+    </div>
+    
+    <script>
+        // WebSocket connection
+        const gameId = '{{ game.id }}';
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/game/${gameId}/`;
+        const socket = new WebSocket(wsUrl);
+        
+        socket.onopen = function(e) {
+            console.log('[WebSocket] Connection established');
+        };
+        
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log('[WebSocket] Message received:', data);
+            
+            // Reload page when game state changes
+            if (data.type === 'game_update') {
+                location.reload();
+            }
+        };
+        
+        socket.onclose = function(event) {
+            if (event.wasClean) {
+                console.log(`[WebSocket] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+            } else {
+                console.log('[WebSocket] Connection died');
+                // Reconnect after 3 seconds
+                setTimeout(() => location.reload(), 3000);
+            }
+        };
+        
+        socket.onerror = function(error) {
+            console.log(`[WebSocket] Error: ${error.message}`);
+        };
+    </script>
+</div>
+{% endblock %}

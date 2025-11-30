@@ -1,0 +1,77 @@
+{% extends 'crypto_demo/base.html' %}
+
+{% block content %}
+<h2>Signature Numérique (RSA)</h2>
+<p>La signature garantit l'authenticité (qui a signé ?) et l'intégrité (le message a-t-il changé ?).</p>
+
+<div class="section">
+    <h3>1. Génération des Clés</h3>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="generate_keys">
+        <button type="submit" class="btn">Générer Clés Privée/Publique</button>
+    </form>
+    {% if private_key %}
+    <div class="result">
+        <strong>Clé Privée (à garder secrète) :</strong><br>
+        <textarea readonly name="private_key_display">{{ private_key }}</textarea>
+        <strong>Clé Publique (à partager) :</strong><br>
+        <textarea readonly name="public_key_display">{{ public_key }}</textarea>
+    </div>
+    {% endif %}
+</div>
+
+<div class="section">
+    <h3>2. Signer un Message</h3>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="sign">
+        <label>Message à signer :</label>
+        <textarea name="message">{{ message }}</textarea>
+        
+        <label>Clé Privée :</label>
+        <textarea name="private_key" placeholder="Collez la clé privée ici...">{{ private_key }}</textarea>
+        
+        <input type="hidden" name="public_key" value="{{ public_key }}">
+        
+        <button type="submit" class="btn">Signer le Message</button>
+    </form>
+    {% if signature %}
+    <div class="result">
+        <strong>Signature (Base64) :</strong><br>
+        <code>{{ signature }}</code>
+    </div>
+    {% endif %}
+</div>
+
+<div class="section">
+    <h3>3. Vérifier la Signature</h3>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="verify">
+        
+        <label>Message reçu :</label>
+        <textarea name="message">{{ message }}</textarea>
+        
+        <label>Signature reçue :</label>
+        <textarea name="signature">{{ signature }}</textarea>
+        
+        <label>Clé Publique de l'émetteur :</label>
+        <textarea name="public_key" placeholder="Collez la clé publique ici...">{{ public_key }}</textarea>
+        
+        <input type="hidden" name="private_key" value="{{ private_key }}">
+        
+        <button type="submit" class="btn">Vérifier</button>
+    </form>
+    
+    {% if verification_done %}
+    <div class="result">
+        {% if is_valid %}
+        <span class="valid">✅ Signature VALIDE. Le message est authentique et intègre.</span>
+        {% else %}
+        <span class="invalid">❌ Signature INVALIDE. Le message a été modifié ou la clé est incorrecte.</span>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

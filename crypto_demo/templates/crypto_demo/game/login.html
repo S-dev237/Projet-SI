@@ -1,0 +1,48 @@
+{% extends 'crypto_demo/base.html' %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+    <h2 class="text-center mb-6">Rejoindre la partie</h2>
+    
+    <form method="post" class="space-y-4" id="loginForm">
+        {% csrf_token %}
+        <div>
+            <label for="name">Votre Pseudo :</label>
+            <input type="text" name="name" id="name" required placeholder="Ex: Alice01">
+        </div>
+        
+        <div>
+            <label for="role">Choisissez votre équipe :</label>
+            <select name="role" id="role" class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500" onchange="togglePasswordField()">
+                <option value="Alice">Équipe Alice (Émetteur)</option>
+                <option value="Bob">Équipe Bob (Récepteur)</option>
+                <option value="Oscar">Équipe Oscar (Attaquant)</option>
+                <option value="Admin">Admin (Contrôle)</option>
+            </select>
+        </div>
+        
+        <div id="passwordField" style="display: none;">
+            <label for="admin_password">Mot de passe Admin :</label>
+            <input type="password" name="admin_password" id="admin_password" placeholder="Entrez le mot de passe">
+        </div>
+        
+        {% if error %}
+        <p class="text-red-600 text-sm">{{ error }}</p>
+        {% endif %}
+        
+        <button type="submit" class="btn w-full">Rejoindre</button>
+    </form>
+</div>
+
+<script>
+function togglePasswordField() {
+    const role = document.getElementById('role').value;
+    const passwordField = document.getElementById('passwordField');
+    if (role === 'Admin') {
+        passwordField.style.display = 'block';
+    } else {
+        passwordField.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}
